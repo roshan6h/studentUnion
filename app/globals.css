@@ -1,0 +1,72 @@
+/**
+ * Next.js Global Stylesheet
+ * File: global.css (or globals.css in your Next.js project)
+ * 
+ * To use this in your Next.js project:
+ * - App Router: Import this file in your root `app/layout.tsx` (e.g., `import './globals.css';`)
+ * - Pages Router: Import this file in `pages/_app.tsx` (e.g., `import '../styles/global.css';`)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-devanagari: "Noto Sans Devanagari", sans-serif;
+}
+
+/* Base Body Resets & Hardware Acceleration */
+html {
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f9f9fe;
+  color: #1a1c20;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Selection styles for beautiful accents */
+::selection {
+  background-color: rgba(0, 37, 77, 0.15);
+  color: #00254d;
+}
+
+/* Custom layout-safe scrollbar for better visual polish */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 37, 77, 0.2);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 37, 77, 0.4);
+}
+
+/* Smooth motion utility classes in case layouts change */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
