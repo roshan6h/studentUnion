@@ -82,7 +82,7 @@ export const FSU_COMMITTEE: CommitteeMember[] = [
         phone: "9766602575",
         isExecutive: false,
         order: 6,
-        photoUrl: "/Asim.png"
+        photoUrl: "/asim.png"
     },
     {
         id: "7",
