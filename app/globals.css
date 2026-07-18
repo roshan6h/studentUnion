@@ -12,7 +12,7 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-devanagari: "Noto Sans Devanagari", sans-serif; //global.css
+  --font-devanagari: "Noto Sans Devanagari", sans-serif;
 }
 
 /* Base Body Resets & Hardware Acceleration */
