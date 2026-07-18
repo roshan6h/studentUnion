@@ -92,7 +92,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans selection:bg-blue-900 selection:text-white antialiased">
+    <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans selection:bg-blue-900 selection:text-white antialiased w-full overflow-x-hidden">
       {/* Fixed White Header */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-100 shadow-sm transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
