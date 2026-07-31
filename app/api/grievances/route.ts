@@ -6,7 +6,7 @@ const SEED_GRIEVANCES = [
         phone: "9804126359",
         subject: "AC Maintenance (ICT Building)",
         category: "Maintenance",
-        message: "The drinking water purifier near Room 104 in Building B requires filter cartridge maintenance.",
+        message: "The AC in ICT 4th Sem requires maintenance.",
         status: "Resolved",
         createdAt: "2026-02-18T09:00:00.000Z",
         isAnonymous: false,
