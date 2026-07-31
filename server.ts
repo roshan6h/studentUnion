@@ -34,28 +34,101 @@ function getGeminiClient(): GoogleGenAI {
 }
 
 const GRIEVANCES_FILE = path.join(process.cwd(), 'grievances.json');
+const TMP_GRIEVANCES_FILE = path.join('/tmp', 'grievances.json');
 
-// Ensure grievances file exists
-if (!fs.existsSync(GRIEVANCES_FILE)) {
-    fs.writeFileSync(GRIEVANCES_FILE, JSON.stringify([], null, 2));
-}
-
-// Read grievances
-function getGrievances() {
-    try {
-        const data = fs.readFileSync(GRIEVANCES_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (e) {
-        return [];
+const SEED_GRIEVANCES = [
+    {
+        id: "g-101",
+        name: "Aaditya Sharma",
+        email: "aaditya@example.com",
+        phone: "9800000001",
+        subject: "Requirement for More Workstations in Main IT Lab",
+        category: "Infrastructure",
+        message: "The main computer lab currently has 25 functional PCs for over 60 BCA students per practical session. We request FSU to coordinate with Campus Chief for 15 additional workstations.",
+        status: "In Review",
+        createdAt: "2026-03-12T10:30:00.000Z",
+        response: "FSU Executives met with Campus Management on March 15. Budget for 15 new desktop systems has been approved."
+    },
+    {
+        id: "g-102",
+        name: "Anonymous Student",
+        email: null,
+        phone: null,
+        subject: "Extended Library Hours During Mid-Term Examinations",
+        category: "Academic",
+        message: "Requesting the campus library reading room to stay open until 6:00 PM during examination months so students living in hostels and far away can study peacefully.",
+        status: "Resolved",
+        createdAt: "2026-02-28T14:15:00.000Z",
+        response: "Approved! Library hours extended until 6:00 PM effective from March 1st."
+    },
+    {
+        id: "g-103",
+        name: "Suman Giri",
+        email: "suman@example.com",
+        phone: "9800000002",
+        subject: "Filter Replacement for Water Dispenser (Building B)",
+        category: "Infrastructure",
+        message: "The drinking water purifier near Room 104 in Building B requires filter cartridge maintenance.",
+        status: "Resolved",
+        createdAt: "2026-02-18T09:00:00.000Z",
+        response: "Maintenance team replaced the filter unit on Feb 20."
     }
+];
+
+let memoryGrievances: any[] | null = null;
+
+// Read grievances safely
+function getGrievances() {
+    if (memoryGrievances !== null) {
+        return memoryGrievances;
+    }
+
+    // 1. Try reading from /tmp/grievances.json
+    try {
+        if (fs.existsSync(TMP_GRIEVANCES_FILE)) {
+            const data = fs.readFileSync(TMP_GRIEVANCES_FILE, "utf-8");
+            memoryGrievances = JSON.parse(data);
+            if (Array.isArray(memoryGrievances) && memoryGrievances.length > 0) {
+                return memoryGrievances;
+            }
+        }
+    } catch (e) {
+        console.error("Error reading from /tmp:", e);
+    }
+
+    // 2. Try reading from process.cwd()/grievances.json
+    try {
+        if (fs.existsSync(GRIEVANCES_FILE)) {
+            const data = fs.readFileSync(GRIEVANCES_FILE, "utf-8");
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                memoryGrievances = parsed;
+                return memoryGrievances;
+            }
+        }
+    } catch (e) {
+        console.error("Error reading from process.cwd():", e);
+    }
+
+    // 3. Fallback to SEED_GRIEVANCES
+    memoryGrievances = [...SEED_GRIEVANCES];
+    return memoryGrievances;
 }
 
-// Save grievances
-function saveGrievances(data: any) {
+// Save grievances safely
+function saveGrievances(data: any[]) {
+    memoryGrievances = data;
+
+    try {
+        fs.writeFileSync(TMP_GRIEVANCES_FILE, JSON.stringify(data, null, 2));
+    } catch (e) {
+        console.error("Error writing to /tmp:", e);
+    }
+
     try {
         fs.writeFileSync(GRIEVANCES_FILE, JSON.stringify(data, null, 2));
     } catch (e) {
-        console.error("Error saving grievances:", e);
+        // Read-only filesystem on serverless is safe to ignore
     }
 }
 
@@ -94,6 +167,19 @@ app.post("/api/grievances", (req: Request, res: Response) => {
 // Get all grievances
 app.get("/api/grievances", (req: Request, res: Response) => {
     res.json(getGrievances());
+});
+
+// Delete a grievance
+app.delete("/api/grievances/:id", (req: Request, res: Response) => {
+    const { id } = req.params;
+    const grievances = getGrievances();
+    const index = grievances.findIndex((g: any) => g.id === id);
+    if (index === -1) {
+        return res.status(404).json({ error: "Grievance not found." });
+    }
+    const deleted = grievances.splice(index, 1);
+    saveGrievances(grievances);
+    res.json({ success: true, deleted: deleted[0] });
 });
 
 // Chatbot endpoint

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MessageSquare, Shield, HelpCircle, Send, CheckCircle, Clock } from "lucide-react";
+import { MessageSquare, Shield, HelpCircle, Send, CheckCircle, Clock, Trash2 } from "lucide-react";
 
 interface GrievanceFormProps {
     language: "en" | "np";
@@ -18,6 +18,48 @@ export interface Grievance {
     isAnonymous: boolean;
     response?: string;
 }
+const DEFAULT_SEED_GRIEVANCES: Grievance[] = [
+    {
+        id: "g-101",
+        name: "Aaditya Sharma",
+        email: "aaditya@example.com",
+        phone: "9800000001",
+        subject: "Requirement for More Workstations in Main IT Lab",
+        category: "Infrastructure",
+        message: "The main computer lab currently has 25 functional PCs for over 60 BCA students per practical session. We request FSU to coordinate with Campus Chief for 15 additional workstations.",
+        status: "In Review",
+        createdAt: "2026-03-12T10:30:00.000Z",
+        isAnonymous: false,
+        response: "FSU Executives met with Campus Management on March 15. Budget for 15 new desktop systems has been approved."
+    },
+    {
+        id: "g-102",
+        name: "Anonymous Student",
+        email: undefined,
+        phone: undefined,
+        subject: "Extended Library Hours During Mid-Term Examinations",
+        category: "Academic",
+        message: "Requesting the campus library reading room to stay open until 6:00 PM during examination months so students living in hostels and far away can study peacefully.",
+        status: "Resolved",
+        createdAt: "2026-02-28T14:15:00.000Z",
+        isAnonymous: true,
+        response: "Approved! Library hours extended until 6:00 PM effective from March 1st."
+    },
+    {
+        id: "g-103",
+        name: "Suman Giri",
+        email: "suman@example.com",
+        phone: "9800000002",
+        subject: "Filter Replacement for Water Dispenser (Building B)",
+        category: "Infrastructure",
+        message: "The drinking water purifier near Room 104 in Building B requires filter cartridge maintenance.",
+        status: "Resolved",
+        createdAt: "2026-02-18T09:00:00.000Z",
+        isAnonymous: false,
+        response: "Maintenance team replaced the filter unit on Feb 20."
+    }
+];
+
 export default function GrievanceForm({ language }: GrievanceFormProps) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -27,10 +69,11 @@ export default function GrievanceForm({ language }: GrievanceFormProps) {
     const [message, setMessage] = useState("");
     const [isAnonymous, setIsAnonymous] = useState(false);
 
-    const [grievances, setGrievances] = useState<Grievance[]>([]);
+    const [grievances, setGrievances] = useState<Grievance[]>(DEFAULT_SEED_GRIEVANCES);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
+    const [userUploadedIds, setUserUploadedIds] = useState<string[]>([]);
 
     const categories = [
         { value: "Academic", labelEn: "Academic & Policy", labelNp: "शैक्षिक तथा नीति" },
@@ -41,21 +84,89 @@ export default function GrievanceForm({ language }: GrievanceFormProps) {
     ];
 
     const fetchGrievances = async () => {
+        let apiGrievances: Grievance[] = [];
         try {
             const res = await fetch("/api/grievances");
             if (res.ok) {
                 const data = await res.json();
-                // Sort descending by date
-                setGrievances(data.reverse());
+                if (Array.isArray(data)) {
+                    apiGrievances = data;
+                }
             }
         } catch (e) {
-            console.error("Error fetching grievances:", e);
+            console.error("Error fetching grievances from API:", e);
         }
+
+        // Load local custom grievances from localStorage
+        let localGrievances: Grievance[] = [];
+        try {
+            const savedLocal = localStorage.getItem("local_custom_grievances");
+            if (savedLocal) {
+                const customItems = JSON.parse(savedLocal);
+                if (Array.isArray(customItems)) {
+                    localGrievances = customItems;
+                }
+            }
+        } catch (e) {
+            console.error("Error reading local custom grievances:", e);
+        }
+
+        // Combine base seed grievances, server API grievances, and local custom grievances
+        const combinedMap = new Map<string, Grievance>();
+
+        DEFAULT_SEED_GRIEVANCES.forEach(g => combinedMap.set(g.id, g));
+        apiGrievances.forEach(g => combinedMap.set(g.id, g));
+        localGrievances.forEach(g => combinedMap.set(g.id, g));
+
+        const finalArray = Array.from(combinedMap.values()).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        setGrievances(finalArray);
     };
 
     useEffect(() => {
         fetchGrievances();
+        try {
+            const saved = localStorage.getItem("my_submitted_grievance_ids");
+            if (saved) {
+                setUserUploadedIds(JSON.parse(saved));
+            }
+        } catch (e) {
+            console.error("Error loading submitted IDs:", e);
+        }
     }, []);
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm(language === "en" ? "Are you sure you want to delete this submission?" : "के तपाईं यो गुनासो हटाउन चाहनुहुन्छ?")) {
+            return;
+        }
+
+        // Optimistically update UI
+        setGrievances(prev => prev.filter(g => g.id !== id));
+        const updatedIds = userUploadedIds.filter(item => item !== id);
+        setUserUploadedIds(updatedIds);
+        localStorage.setItem("my_submitted_grievance_ids", JSON.stringify(updatedIds));
+
+        // Also remove from local_custom_grievances if present
+        try {
+            const savedLocal = localStorage.getItem("local_custom_grievances");
+            if (savedLocal) {
+                const customItems: Grievance[] = JSON.parse(savedLocal);
+                const filtered = customItems.filter(item => item.id !== id);
+                localStorage.setItem("local_custom_grievances", JSON.stringify(filtered));
+            }
+        } catch (e) {
+            console.error("Error updating local custom grievances on delete:", e);
+        }
+
+        try {
+            await fetch(`/api/grievances/${id}`, { method: "DELETE" });
+            await fetch(`/api/grievances?id=${id}`, { method: "DELETE" });
+        } catch (e) {
+            console.error("Error sending delete request to server:", e);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -85,6 +196,7 @@ export default function GrievanceForm({ language }: GrievanceFormProps) {
             });
 
             if (response.ok) {
+                const newG = await response.json();
                 setSubmitSuccess(true);
                 setName("");
                 setEmail("");
@@ -92,14 +204,67 @@ export default function GrievanceForm({ language }: GrievanceFormProps) {
                 setSubject("");
                 setMessage("");
                 setIsAnonymous(false);
+
+                if (newG && newG.id) {
+                    const updatedIds = Array.from(new Set([...userUploadedIds, newG.id]));
+                    setUserUploadedIds(updatedIds);
+                    try {
+                        localStorage.setItem("my_submitted_grievance_ids", JSON.stringify(updatedIds));
+                        const existingLocal = localStorage.getItem("local_custom_grievances");
+                        const list: Grievance[] = existingLocal ? JSON.parse(existingLocal) : [];
+                        if (!list.some(g => g.id === newG.id)) {
+                            list.push(newG);
+                            localStorage.setItem("local_custom_grievances", JSON.stringify(list));
+                        }
+                    } catch (e) {
+                        console.error("Error saving uploaded grievance to localStorage", e);
+                    }
+                }
+
                 fetchGrievances();
                 setTimeout(() => setSubmitSuccess(false), 5000);
             } else {
-                const errorData = await response.json();
-                setErrorMsg(errorData.error || "Failed to submit. Please try again.");
+                throw new Error("Server returned error, triggering fallback");
             }
         } catch (e) {
-            setErrorMsg("Connection failed. Please verify the dev server is active.");
+            // Fallback for static host / offline: create and store locally
+            const fallbackGrievance: Grievance = {
+                id: "local-" + Date.now().toString(),
+                name: isAnonymous ? "Anonymous Student" : (name || "Anonymous"),
+                email: isAnonymous ? undefined : (email || undefined),
+                phone: isAnonymous ? undefined : (phone || undefined),
+                subject,
+                category: category || "General",
+                message,
+                status: "Pending",
+                createdAt: new Date().toISOString(),
+                isAnonymous: isAnonymous,
+                response: undefined
+            };
+
+            try {
+                const existingLocal = localStorage.getItem("local_custom_grievances");
+                const list: Grievance[] = existingLocal ? JSON.parse(existingLocal) : [];
+                list.push(fallbackGrievance);
+                localStorage.setItem("local_custom_grievances", JSON.stringify(list));
+
+                const updatedIds = [...userUploadedIds, fallbackGrievance.id];
+                setUserUploadedIds(updatedIds);
+                localStorage.setItem("my_submitted_grievance_ids", JSON.stringify(updatedIds));
+
+                setGrievances(prev => [fallbackGrievance, ...prev]);
+                setSubmitSuccess(true);
+                setName("");
+                setEmail("");
+                setPhone("");
+                setSubject("");
+                setMessage("");
+                setIsAnonymous(false);
+                setTimeout(() => setSubmitSuccess(false), 5000);
+            } catch (err) {
+                console.error("Error saving fallback grievance:", err);
+                setErrorMsg("Failed to submit grievance. Please try again.");
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -318,7 +483,19 @@ export default function GrievanceForm({ language }: GrievanceFormProps) {
                                                 "{g.message}"
                                             </p>
                                             <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1.5 border-t border-white/5 font-mono">
-                                                <span>{g.isAnonymous ? "Anonymous Student" : g.name}</span>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span>{g.isAnonymous ? "Anonymous Student" : g.name}</span>
+                                                    {userUploadedIds.includes(g.id) && (
+                                                        <button
+                                                            onClick={() => handleDelete(g.id)}
+                                                            className="text-red-400 hover:text-red-300 transition-colors cursor-pointer flex items-center gap-0.5 ml-2 font-sans bg-red-500/10 hover:bg-red-500/20 px-1.5 py-0.5 rounded text-[9px] font-medium"
+                                                            title={language === "en" ? "Delete My Submission" : "मेरो गुनासो हटाउनुहोस्"}
+                                                        >
+                                                            <Trash2 className="w-2.5 h-2.5 shrink-0" />
+                                                            <span>{language === "en" ? "Delete" : "हटाउनुहोस्"}</span>
+                                                        </button>
+                                                    )}
+                                                </div>
                                                 <span>{new Date(g.createdAt).toLocaleDateString()}</span>
                                             </div>
                                         </div>
