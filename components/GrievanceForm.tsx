@@ -20,19 +20,6 @@ export interface Grievance {
 }
 const DEFAULT_SEED_GRIEVANCES: Grievance[] = [
     {
-        id: "g-101",
-        name: "Aaditya Sharma",
-        email: "aaditya@example.com",
-        phone: "9800000001",
-        subject: "Requirement for More Workstations in Main IT Lab",
-        category: "Infrastructure",
-        message: "The main computer lab currently has 25 functional PCs for over 60 BCA students per practical session. We request FSU to coordinate with Campus Chief for 15 additional workstations.",
-        status: "In Review",
-        createdAt: "2026-03-12T10:30:00.000Z",
-        isAnonymous: false,
-        response: "FSU Executives met with Campus Management on March 15. Budget for 15 new desktop systems has been approved."
-    },
-    {
         id: "g-102",
         name: "Anonymous Student",
         email: undefined,
@@ -44,19 +31,6 @@ const DEFAULT_SEED_GRIEVANCES: Grievance[] = [
         createdAt: "2026-02-28T14:15:00.000Z",
         isAnonymous: true,
         response: "Approved! Library hours extended until 6:00 PM effective from March 1st."
-    },
-    {
-        id: "g-103",
-        name: "Suman Giri",
-        email: "suman@example.com",
-        phone: "9800000002",
-        subject: "Filter Replacement for Water Dispenser (Building B)",
-        category: "Infrastructure",
-        message: "The drinking water purifier near Room 104 in Building B requires filter cartridge maintenance.",
-        status: "Resolved",
-        createdAt: "2026-02-18T09:00:00.000Z",
-        isAnonymous: false,
-        response: "Maintenance team replaced the filter unit on Feb 20."
     }
 ];
 
