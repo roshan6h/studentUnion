@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useState, useEffect } from "react";
 import { Shield, Sparkles, MessageSquare, Bell, Images, BookOpen, Globe, Phone, MapPin, ChevronRight, Menu, X, ArrowRight, Users, GraduationCap, PartyPopper, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -92,7 +92,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans selection:bg-blue-900 selection:text-white antialiased">
+    <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans selection:bg-blue-900 selection:text-white antialiased w-full max-w-full overflow-x-hidden relative">
       {/* Fixed White Header */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-100 shadow-sm transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
@@ -212,7 +212,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Banner / Hero Section with exact design */}
-      <section className="relative min-h-[85vh] flex items-center pt-32 pb-24 overflow-hidden text-white mt-12">
+      <section className="relative min-h-[85vh] flex items-center pt-32 pb-24 overflow-hidden text-white mt-12 w-full max-w-full">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img
@@ -226,7 +226,7 @@ export default function App() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent"></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 w-full min-w-0">
           <div className="max-w-4xl space-y-6">
             {/* Red Pill Badge */}
             <div>
@@ -236,9 +236,9 @@ export default function App() {
             </div>
 
             {/* Welcome Heading */}
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white font-sans">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white font-sans break-words">
               Welcome to Free Students' Union, Aadikavi Bhanubhakta Campus |{" "}
-              <span className="font-devanagari block mt-2 text-white font-semibold text-2xl sm:text-3xl lg:text-4xl leading-normal">
+              <span className="font-devanagari block mt-2 text-white font-semibold text-xl sm:text-3xl lg:text-4xl leading-normal break-words">
                 आदिकवि भानुभक्त क्याम्पसको स्वतन्त्र विद्यार्थी युनियन (स्ववियु) मा स्वागत छ।
               </span>
             </h2>
@@ -305,8 +305,8 @@ export default function App() {
       </section>
 
       {/* Statistics Section underneath Hero */}
-      <section id="stats" className="bg-white py-12 border-b border-slate-100 shadow-sm relative z-20">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="stats" className="bg-white py-12 border-b border-slate-100 shadow-sm relative z-20 w-full max-w-full overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Card 1: Students */}
             <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
@@ -356,7 +356,7 @@ export default function App() {
       </section>
 
       {/* Main Page Layout Container */}
-      <main className="max-w-7xl mx-auto px-6 py-12 space-y-20 flex-1">
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-16 sm:space-y-20 flex-1 min-w-0 overflow-hidden">
         {/* Section: About Us & Vision/Mission */}
         <AboutSection language={language} />
 
@@ -389,8 +389,8 @@ export default function App() {
       </main>
 
       {/* Elegant Footer */}
-      <footer className="bg-slate-900 text-slate-400 pt-16 pb-8 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-6">
+      <footer className="bg-slate-900 text-slate-400 pt-16 pb-8 border-t border-slate-800 w-full max-w-full overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
             {/* Column 1: FSU Brand */}
             <div className="space-y-4">
@@ -406,7 +406,7 @@ export default function App() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-white leading-none">Free Students' Union</h4>
-                  <p className="text-[10px] text-slate-500 uppercase mt-0.5 font-mono">Aadikavi Bhanubhakta Campus</p>
+                  <p className="text-[10px] text-slate-500 uppercase mt-0.5 font-mono">Aadikavi Campus</p>
                 </div>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed font-devanagari">
@@ -463,11 +463,11 @@ export default function App() {
             </div>
           </div>
 
-          <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500 font-mono">
-            <span>
+          <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500 font-sans">
+            <span className="text-center sm:text-left break-words max-w-full">
               © {new Date().getFullYear()} Free Students' Union, Aadikavi Bhanubhakta Campus. All Rights Reserved.
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 shrink-0">
               <Globe className="w-3.5 h-3.5" />
               Tanahun, Nepal
             </span>
