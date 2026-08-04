@@ -7,7 +7,7 @@ import NoticeBoard from "@/components/NoticeBoard";
 import CommitteeSection from "@/components/CommitteeSection";
 import PhotoGallery from "@/components/PhotoGallery";
 import GrievanceForm from "@/components/GrievanceForm";
-import FSUAssistant from "@/components/FSUAssistant";
+//import FSUAssistant from "@/components/FSUAssistant";
 import AboutSection from "@/components/AboutSection";
 import PresidentMessage from "@/components/PresidentMessage";
 import HistorySection from "@/components/HistorySection";
@@ -45,7 +45,7 @@ export default function App() {
 
       let currentSection = "#";
 
-      // Use getBoundingClientRect for absolute viewport coordinates accuracy
+
       for (const section of sections) {
         if (section.id === "home") continue;
         const element = document.getElementById(section.id);
@@ -60,7 +60,6 @@ export default function App() {
         }
       }
 
-      // Special fallback: bottom of the page highlights Contact
       if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60) {
         currentSection = "#grievances";
       }
@@ -313,7 +312,7 @@ export default function App() {
               <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-600">
                 <Users className="w-6 h-6" />
               </div>
-              <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">5,000+</div>
+              <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">3500+</div>
               <div className="text-[10px] font-bold text-slate-500 tracking-widest uppercase font-sans">
                 {language === "en" ? "Students Represented" : "विद्यार्थी प्रतिनिधित्व"}
               </div>
@@ -324,7 +323,7 @@ export default function App() {
               <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-600">
                 <GraduationCap className="w-6 h-6" />
               </div>
-              <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">12+</div>
+              <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">16+</div>
               <div className="text-[10px] font-bold text-slate-500 tracking-widest uppercase font-sans">
                 {language === "en" ? "Academic Programs" : "शैक्षिक कार्यक्रमहरू"}
               </div>
@@ -335,7 +334,7 @@ export default function App() {
               <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-600">
                 <PartyPopper className="w-6 h-6" />
               </div>
-              <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">50+</div>
+              <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">40+</div>
               <div className="text-[10px] font-bold text-slate-500 tracking-widest uppercase font-sans">
                 {language === "en" ? "Annual Activities" : "वार्षिक गतिविधिहरू"}
               </div>
@@ -346,7 +345,7 @@ export default function App() {
               <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-600">
                 <Heart className="w-6 h-6" />
               </div>
-              <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">20+</div>
+              <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">10+</div>
               <div className="text-[10px] font-bold text-slate-500 tracking-widest uppercase font-sans">
                 {language === "en" ? "Community Projects" : "सामुदायिक परियोजनाहरू"}
               </div>
@@ -385,7 +384,7 @@ export default function App() {
         <GrievanceForm language={language} />
 
         {/* Section: AI helpdesk chat drawer */}
-        <FSUAssistant language={language} />
+
       </main>
 
       {/* Elegant Footer */}
@@ -428,7 +427,7 @@ export default function App() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-slate-500 shrink-0" />
-                  <a href="tel:9804141256" className="hover:text-white">9804141256 (Anup Ale Magar)</a>
+                  <a href="tel:9804141256" className="hover:text-white">9804141296 (Anup Ale Magar)</a>
                 </li>
               </ul>
             </div>

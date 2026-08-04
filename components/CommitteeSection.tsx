@@ -24,7 +24,7 @@ export const FSU_COMMITTEE: CommitteeMember[] = [
         nameNp: "अनुप आले मगर",
         roleEn: "President",
         roleNp: "अध्यक्ष",
-        phone: "9804141256",
+        phone: "9804141296",
         isExecutive: true,
         order: 1,
         photoUrl: "/anup1.png"

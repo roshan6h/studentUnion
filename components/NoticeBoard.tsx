@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Bell, ChevronRight, FileText, ArrowUpRight } from "lucide-react";
+import { Calendar, Bell, ChevronRight, FileText, ArrowUpRight, ChevronDown } from "lucide-react";
 import { motion } from "motion/react";
 
 export interface Notice {
@@ -7,7 +7,7 @@ export interface Notice {
     titleEn: string;
     titleNp: string;
     date: string;
-    category: "Urgent" | "Academic" | "Sports" | "Solidarity" | "General" | string;
+    category: "Urgent" | "Academic" | "Sports" | "Solidarity" | "General" | "Cultural" | string;
     contentEn: string;
     contentNp: string;
     isUrgent: boolean;
@@ -54,6 +54,26 @@ export const FSU_NOTICES: Notice[] = [
         isUrgent: false,
         contentEn: "Our members are visiting classes to gather feedback on facilities, curriculum, and exam management. FSU is committed to voicing your concerns directly to the campus board. Share your suggestions with any of our visiting members or submit online through the portal.",
         contentNp: "भौतिक पूर्वाधार, पाठ्यक्रम र परीक्षा व्यवस्थापनका विषयमा विद्यार्थी प्रतिक्रिया संकलन गर्न स्ववियु सदस्यहरू विभिन्न कक्षाकोठाहरूमा पुगिरहनुभएको छ। तपाईंका समस्या र सुझावहरू हाम्रो अनलाइन पोर्टल मार्फत पनि पेस गर्न सक्नुहुन्छ।"
+    },
+    {
+        id: "n5",
+        titleEn: "Inter-Faculty Futsal Tournament 2026",
+        titleNp: "अन्तर-संकाय फुटसल प्रतियोगिता २०८३",
+        date: "2026-08-21",
+        category: "Sports",
+        isUrgent: true,
+        contentEn: "The Free Student Union (FSU) of Aadikavi Bhanubhakta Campus proudly announces the Inter-Faculty Futsal Tournament 2026. The tournament will be held from 21 - 23 August 2026 at Damauli Futsal Court. Students from all faculties are encouraged to participate and represent their faculty. Boys' category prizes include Rs. 8,000 for first place and Rs. 5,000 for second place, while the Girls' category offers Rs. 5,000 for first place and Rs. 3,000 for second place. All winners will receive medals and certificates. Register now and be part of this exciting competition.",
+        contentNp: "आदिकवि भानुभक्त क्याम्पसको स्वतन्त्र विद्यार्थी युनियन (FSU) द्वारा आयोजित अन्तर-संकाय फुटसल प्रतियोगिता २०८३ मा सम्पूर्ण विद्यार्थीहरूलाई हार्दिक निमन्त्रणा गरिन्छ। प्रतियोगिता २०८३ भदौ ५ देखि ७ गते (२१–२३ अगस्ट २०२६) सम्म दमौली फुटसल कोर्टमा सञ्चालन हुनेछ। सबै संकायका विद्यार्थीहरूले आफ्नो संकायको प्रतिनिधित्व गर्दै सहभागिता जनाउन सक्नेछन्। छात्रतर्फ प्रथम पुरस्कार रु. ८,000 तथा द्वितीय पुरस्कार रु. ५,000, छात्रीतर्फ प्रथम पुरस्कार रु. ५,000 तथा द्वितीय पुरस्कार रु. ३,000 प्रदान गरिनेछ। सबै विजेताहरूलाई मेडल र प्रमाणपत्र पनि प्रदान गरिनेछ। समयमै दर्ता गरी प्रतियोगितामा सहभागी बन्नुहोस्।"
+    },
+    {
+        id: "n6",
+        titleEn: "Inter-Faculty Original Teej Song Competition 2026",
+        titleNp: "अन्तर-संकाय मौलिक तीज गीत प्रतियोगिता २०८३",
+        date: "2026-08-25",
+        category: "Cultural",
+        isUrgent: false,
+        contentEn: "The Free Student Union (FSU) of Aadikavi Bhanubhakta Campus is organizing the Inter-Faculty Original Teej Song Competition 2026 to celebrate the rich traditions of Teej and promote Nepali culture through music. Students from all faculties are invited to participate by presenting original Teej songs and showcasing their creativity, teamwork, and cultural talent. Outstanding performances will be recognized with attractive prizes, medals, and certificates. We encourage every faculty to register and make this cultural celebration memorable.",
+        contentNp: "आदिकवि भानुभक्त क्याम्पसको स्वतन्त्र विद्यार्थी युनियन (FSU) द्वारा आयोजित अन्तर-संकाय मौलिक तीज गीत प्रतियोगिता २०८३ मा सम्पूर्ण विद्यार्थीहरूलाई हार्दिक निमन्त्रणा गरिन्छ। नेपाली संस्कृति, परम्परा तथा मौलिक सिर्जनशीलताको संरक्षण र प्रवर्द्धन गर्ने उद्देश्यले आयोजना गरिएको यस प्रतियोगितामा सबै संकायका विद्यार्थीहरूले मौलिक तीज गीत प्रस्तुत गर्दै आफ्नो प्रतिभा प्रदर्शन गर्न सक्नेछन्। उत्कृष्ट प्रस्तुतिलाई आकर्षक नगद पुरस्कार, मेडल तथा प्रमाणपत्र प्रदान गरिनेछ। समयमै दर्ता गरी आफ्नो संकायको प्रतिनिधित्व गर्दै यस सांस्कृतिक कार्यक्रममा सहभागी बन्नुहोस्।"
     }
 ];
 
@@ -64,19 +84,33 @@ interface NoticeBoardProps {
 export default function NoticeBoard({ language }: NoticeBoardProps) {
     const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
     const [filter, setFilter] = useState<string>("all");
+    const [showAll, setShowAll] = useState<boolean>(false);
 
-    const categories = ["all", "Solidarity", "Sports", "Academic", "General"];
+    const categories = ["all", "Solidarity", "Sports", "Academic", "General", "Cultural"];
+    const INITIAL_LIMIT = 3;
 
-    const filteredNotices = FSU_NOTICES.filter((n) => {
+    // Sort notices by date descending (most recent date first)
+    const sortedNotices = [...FSU_NOTICES].sort((a, b) => {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+
+    const filteredNotices = sortedNotices.filter((n) => {
         if (filter === "all") return true;
         return n.category.toLowerCase() === filter.toLowerCase();
     });
 
+    const displayedNotices = showAll ? filteredNotices : filteredNotices.slice(0, INITIAL_LIMIT);
+
+    const handleFilterChange = (cat: string) => {
+        setFilter(cat);
+        setShowAll(false);
+    };
+
     return (
         <section id="notices" className="py-16">
             <div className="max-w-6xl mx-auto px-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
-                    <div>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4 w-full min-w-0 max-w-full">
+                    <div className="min-w-0 max-w-full">
                         <span className="bg-blue-900/10 text-blue-950 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase inline-flex items-center gap-1.5 mb-3">
                             <Bell className="w-3.5 h-3.5 animate-bounce" />
                             {language === "en" ? "Announcements" : "सूचना तथा गतिविधि"}
@@ -92,14 +126,14 @@ export default function NoticeBoard({ language }: NoticeBoardProps) {
                     </div>
 
                     {/* Categorized Tabs */}
-                    <div className="flex gap-1.5 overflow-x-auto pb-2 w-full md:w-auto">
+                    <div className="flex gap-1.5 overflow-x-auto pb-2 w-full md:w-auto min-w-0 max-w-full">
                         {categories.map((cat) => (
                             <button
                                 key={cat}
-                                onClick={() => setFilter(cat)}
+                                onClick={() => handleFilterChange(cat)}
                                 className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all capitalize shrink-0 ${filter === cat
-                                        ? "bg-blue-900 text-white shadow-sm"
-                                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                    ? "bg-blue-900 text-white shadow-sm"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                     }`}
                             >
                                 {cat === "all"
@@ -124,21 +158,21 @@ export default function NoticeBoard({ language }: NoticeBoardProps) {
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                     {/* List of Notices */}
                     <div className="lg:col-span-3 space-y-4">
-                        {filteredNotices.map((notice) => (
+                        {displayedNotices.map((notice) => (
                             <div
                                 key={notice.id}
                                 onClick={() => setSelectedNotice(notice)}
                                 className={`p-5 rounded-2xl border transition-all cursor-pointer relative ${selectedNotice?.id === notice.id
-                                        ? "bg-blue-50/30 border-blue-200 ring-1 ring-blue-100"
-                                        : "bg-white border-slate-100 hover:border-slate-200 hover:shadow-sm"
+                                    ? "bg-blue-50/30 border-blue-200 ring-1 ring-blue-100"
+                                    : "bg-white border-slate-100 hover:border-slate-200 hover:shadow-sm"
                                     }`}
                             >
                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                                     <div className="flex items-center gap-2">
                                         <span
                                             className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold tracking-wider uppercase ${notice.isUrgent
-                                                    ? "bg-red-500/10 text-red-600 animate-pulse"
-                                                    : "bg-slate-100 text-slate-600"
+                                                ? "bg-red-500/10 text-red-600 animate-pulse"
+                                                : "bg-slate-100 text-slate-600"
                                                 }`}
                                         >
                                             {notice.category}
@@ -158,7 +192,7 @@ export default function NoticeBoard({ language }: NoticeBoardProps) {
                                 <h3 className="font-bold text-slate-900 text-base group-hover:text-blue-900 transition-colors">
                                     {language === "en" ? notice.titleEn : notice.titleNp}
                                 </h3>
-                                <p className="mt-2 text-slate-500 text-xs line-clamp-2 leading-relaxed">
+                                <p className="mt-2 text-slate-500 text-xs line-clamp-2 leading-relaxed text-justify">
                                     {language === "en" ? notice.contentEn : notice.contentNp}
                                 </p>
 
@@ -171,6 +205,27 @@ export default function NoticeBoard({ language }: NoticeBoardProps) {
                                 </div>
                             </div>
                         ))}
+
+                        {/* Show More / Show Less Button */}
+                        {filteredNotices.length > INITIAL_LIMIT && (
+                            <div className="pt-2 text-center">
+                                <button
+                                    onClick={() => setShowAll(!showAll)}
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs transition-all shadow-sm cursor-pointer border border-slate-200/80 active:scale-95"
+                                >
+                                    <span>
+                                        {showAll
+                                            ? language === "en"
+                                                ? "Show Less"
+                                                : "कम देखाउनुहोस्"
+                                            : language === "en"
+                                                ? `Show More Notices (${filteredNotices.length - INITIAL_LIMIT} more)`
+                                                : `थप सूचनाहरू हेर्नुहोस् (अझै ${filteredNotices.length - INITIAL_LIMIT} वटा)`}
+                                    </span>
+                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAll ? "rotate-180" : ""}`} />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Active Notice Detail Frame */}
@@ -199,8 +254,8 @@ export default function NoticeBoard({ language }: NoticeBoardProps) {
                                 </h4>
 
                                 <div className="mt-4 space-y-4 text-sm leading-relaxed text-slate-200">
-                                    <p className="font-sans">{selectedNotice.contentEn}</p>
-                                    <p className="font-devanagari text-slate-300 bg-white/5 p-4 rounded-xl border border-white/5">
+                                    <p className="font-sans text-justify">{selectedNotice.contentEn}</p>
+                                    <p className="font-devanagari text-slate-300 bg-white/5 p-4 rounded-xl border border-white/5 text-justify">
                                         {selectedNotice.contentNp}
                                     </p>
                                 </div>

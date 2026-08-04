@@ -109,19 +109,7 @@ export default function CampaignManifesto({ language }: CampaignManifestoProps) 
                 </div>
 
                 {/* Action Button linking to AI bot */}
-                <div className="mt-12 text-center bg-slate-800/40 border border-slate-700/30 p-6 rounded-2xl max-w-2xl mx-auto">
-                    <p className="text-sm text-slate-300">
-                        {language === "en"
-                            ? "Want to ask how we plan to achieve these goals? Ask our AI helpdesk!"
-                            : "हामी यी एजेन्डाहरू कसरी पुरा गर्छौं भन्ने जान्न चाहनुहुन्छ? स्ववियु एआई असिस्टेन्टसँग सोध्नुहोस्!"}
-                    </p>
-                    <a
-                        href="#assistant"
-                        className="mt-3 inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-5 py-2.5 rounded-xl transition-all shadow"
-                    >
-                        {language === "en" ? "Chat with FSU AI" : "स्ववियु एआईसँग कुरा गर्नुहोस्"}
-                    </a>
-                </div>
+
             </div>
         </section>
     );
