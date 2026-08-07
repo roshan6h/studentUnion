@@ -1,6 +1,5 @@
 import express, { Request, Response } from "express";
 import path from "path";
-import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
@@ -12,14 +11,14 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Initialize Gemini SDK lazily to prevent server crashes if the API key is not yet set.
+// Initialize Gemini SDK lazily
 let aiInstance: GoogleGenAI | null = null;
 
 function getGeminiClient(): GoogleGenAI {
     if (!aiInstance) {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey || apiKey === "MY_GEMINI_API_KEY" || apiKey.trim() === "") {
-            throw new Error("GEMINI_API_KEY environment variable is required and must be configured in AI Studio secrets.");
+            throw new Error("GEMINI_API_KEY environment variable is required and must be configured.");
         }
         aiInstance = new GoogleGenAI({
             apiKey: apiKey,
@@ -33,153 +32,21 @@ function getGeminiClient(): GoogleGenAI {
     return aiInstance;
 }
 
-const GRIEVANCES_FILE = path.join(process.cwd(), 'grievances.json');
-const TMP_GRIEVANCES_FILE = path.join('/tmp', 'grievances.json');
-
-const SEED_GRIEVANCES = [
-    {
-        id: "g-101",
-        name: "Aaditya Sharma",
-        email: "aaditya@example.com",
-        phone: "9800000001",
-        subject: "Requirement for More Workstations in Main IT Lab",
-        category: "Infrastructure",
-        message: "The main computer lab currently has 25 functional PCs for over 60 BCA students per practical session. We request FSU to coordinate with Campus Chief for 15 additional workstations.",
-        status: "In Review",
-        createdAt: "2026-03-12T10:30:00.000Z",
-        response: "FSU Executives met with Campus Management on March 15. Budget for 15 new desktop systems has been approved."
-    },
-    {
-        id: "g-102",
-        name: "Anonymous Student",
-        email: null,
-        phone: null,
-        subject: "Extended Library Hours During Mid-Term Examinations",
-        category: "Academic",
-        message: "Requesting the campus library reading room to stay open until 6:00 PM during examination months so students living in hostels and far away can study peacefully.",
-        status: "Resolved",
-        createdAt: "2026-02-28T14:15:00.000Z",
-        response: "Approved! Library hours extended until 6:00 PM effective from March 1st."
-    },
-    {
-        id: "g-103",
-        name: "Suman Giri",
-        email: "suman@example.com",
-        phone: "9800000002",
-        subject: "Filter Replacement for Water Dispenser (Building B)",
-        category: "Infrastructure",
-        message: "The drinking water purifier near Room 104 in Building B requires filter cartridge maintenance.",
-        status: "Resolved",
-        createdAt: "2026-02-18T09:00:00.000Z",
-        response: "Maintenance team replaced the filter unit on Feb 20."
-    }
-];
-
-let memoryGrievances: any[] | null = null;
-
-// Read grievances safely
-function getGrievances() {
-    if (memoryGrievances !== null) {
-        return memoryGrievances;
-    }
-
-    // 1. Try reading from /tmp/grievances.json
-    try {
-        if (fs.existsSync(TMP_GRIEVANCES_FILE)) {
-            const data = fs.readFileSync(TMP_GRIEVANCES_FILE, "utf-8");
-            memoryGrievances = JSON.parse(data);
-            if (Array.isArray(memoryGrievances) && memoryGrievances.length > 0) {
-                return memoryGrievances;
-            }
-        }
-    } catch (e) {
-        console.error("Error reading from /tmp:", e);
-    }
-
-    // 2. Try reading from process.cwd()/grievances.json
-    try {
-        if (fs.existsSync(GRIEVANCES_FILE)) {
-            const data = fs.readFileSync(GRIEVANCES_FILE, "utf-8");
-            const parsed = JSON.parse(data);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                memoryGrievances = parsed;
-                return memoryGrievances;
-            }
-        }
-    } catch (e) {
-        console.error("Error reading from process.cwd():", e);
-    }
-
-    // 3. Fallback to SEED_GRIEVANCES
-    memoryGrievances = [...SEED_GRIEVANCES];
-    return memoryGrievances;
-}
-
-// Save grievances safely
-function saveGrievances(data: any[]) {
-    memoryGrievances = data;
-
-    try {
-        fs.writeFileSync(TMP_GRIEVANCES_FILE, JSON.stringify(data, null, 2));
-    } catch (e) {
-        console.error("Error writing to /tmp:", e);
-    }
-
-    try {
-        fs.writeFileSync(GRIEVANCES_FILE, JSON.stringify(data, null, 2));
-    } catch (e) {
-        // Read-only filesystem on serverless is safe to ignore
-    }
-}
-
 // API Routes
 app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok" });
 });
 
-// Submit a grievance
+// GRIEVANCE SUBMISSION ENDPOINT (Stateless / Local memory)
 app.post("/api/grievances", (req: Request, res: Response) => {
-    const { name, email, phone, subject, category, message, isAnonymous } = req.body;
+    const { subject, message } = req.body || {};
     if (!subject || !message) {
         return res.status(400).json({ error: "Subject and message are required." });
     }
-
-    const grievances = getGrievances();
-    const newGrievance = {
-        id: Date.now().toString(),
-        name: isAnonymous ? "Anonymous Student" : (name || "Anonymous"),
-        email: isAnonymous ? null : (email || null),
-        phone: isAnonymous ? null : (phone || null),
-        subject,
-        category: category || "General",
-        message,
-        status: "Pending",
-        createdAt: new Date().toISOString(),
-        response: null
-    };
-
-    grievances.push(newGrievance);
-    saveGrievances(grievances);
-
-    res.status(201).json(newGrievance);
-});
-
-// Get all grievances
-app.get("/api/grievances", (req: Request, res: Response) => {
-    res.json(getGrievances());
-});
-
-// Delete a grievance
-app.delete("/api/grievances/:id", (req: Request, res: Response) => {
-    const { id } = req.params;
-    const grievances = getGrievances();
-    const index = grievances.findIndex((g: any) => g.id === id);
-    if (index === -1) {
-        return res.status(404).json({ error: "Grievance not found." });
-    }
-    const deleted = grievances.splice(index, 1);
-    saveGrievances(grievances);
-    res.json({ success: true, deleted: deleted[0] });
+    res.status(201).json({
+        success: true,
+        message: "Thank you for submitting your feedback/grievance to FSU Aadikavi."
+    });
 });
 
 // Chatbot endpoint
@@ -272,6 +139,11 @@ Here is the essential information about FSU Aadikavi Bhanubhakta Campus:
         console.error("Gemini API Error:", error);
         res.status(500).json({ error: "Failed to communicate with Gemini AI: " + error.message });
     }
+});
+
+// Catch-all for unmatched API routes to ensure JSON responses
+app.all("/api/*", (req: Request, res: Response) => {
+    res.status(404).json({ error: `API route not found: ${req.method} ${req.path}` });
 });
 
 // Serve frontend assets

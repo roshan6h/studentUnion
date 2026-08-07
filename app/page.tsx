@@ -34,8 +34,8 @@ export default function App() {
         { id: "history", href: "#history" },
         { id: "committee", href: "#committee" },
         { id: "gallery", href: "#gallery" },
-        { id: "movements", href: "#movements" },
-        { id: "grievances", href: "#grievances" }
+        { id: "movements", href: "#movements" }
+
       ];
 
       if (window.scrollY < 120) {
@@ -45,7 +45,7 @@ export default function App() {
 
       let currentSection = "#";
 
-
+      // Use getBoundingClientRect for absolute viewport coordinates accuracy
       for (const section of sections) {
         if (section.id === "home") continue;
         const element = document.getElementById(section.id);
@@ -60,6 +60,7 @@ export default function App() {
         }
       }
 
+      // Special fallback: bottom of the page highlights Contact
       if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60) {
         currentSection = "#grievances";
       }
@@ -87,7 +88,7 @@ export default function App() {
     { href: "#committee", labelEn: "Committee", labelNp: "कार्यसमिति" },
     { href: "#gallery", labelEn: "Gallery", labelNp: "ग्यालेरी" },
     { href: "#movements", labelEn: "Journey", labelNp: "यात्रा" },
-    { href: "#grievances", labelEn: "Contact", labelNp: "सम्पर्क" },
+
   ];
 
   return (
@@ -258,7 +259,7 @@ export default function App() {
                 href="#grievances"
                 className="bg-[#b91c1c] hover:bg-red-800 text-white font-bold px-8 py-3.5 rounded-full text-xs uppercase tracking-wider transition-all shadow-lg hover:shadow-red-600/20 hover:-translate-y-0.5 cursor-pointer"
               >
-                Join ANNFSU
+                Join FSU
               </a>
 
               <a
@@ -427,7 +428,7 @@ export default function App() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-slate-500 shrink-0" />
-                  <a href="tel:9804141256" className="hover:text-white">9804141296 (Anup Ale Magar)</a>
+                  <a href="tel:9804141256" className="hover:text-white">9804141256 (Anup Ale Magar)</a>
                 </li>
               </ul>
             </div>

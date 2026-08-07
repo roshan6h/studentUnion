@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Search, Phone, Shield, Users, ArrowUpRight } from "lucide-react";
+import { useState, ChangeEvent } from "react";
+import { Search, Phone, Shield, Users, ArrowUpRight, ChevronDown, ChevronUp } from "lucide-react";
 import { motion } from "motion/react";
 
 // Inline type definition to make this component completely self-contained and independent
@@ -236,7 +236,7 @@ export const FSU_COMMITTEE: CommitteeMember[] = [
         phone: "9821517591",
         isExecutive: false,
         order: 20,
-        photoUrl: "biwash.png"
+        photoUrl: "/biwash.png"
     },
     {
         id: "21",
@@ -296,7 +296,7 @@ function CommitteeMemberCard({ member, language, getInitials }: MemberCardProps)
             <div className="flex items-center gap-4">
                 {/* Avatar Frame (The square box) supporting custom manual photoUrl / images */}
                 <div
-                    className={`w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-slate-100/80 ${member.photoUrl && !imageError
+                    className={`w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-slate-100/80 ${member.photoUrl && !imageError
                         ? "bg-slate-50"
                         : member.isExecutive
                             ? "bg-blue-900 text-white shadow font-bold text-lg select-none"
@@ -353,6 +353,9 @@ function CommitteeMemberCard({ member, language, getInitials }: MemberCardProps)
 export default function CommitteeSection({ language }: CommitteeSectionProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState<"all" | "executive" | "general">("all");
+    const [showAll, setShowAll] = useState(false);
+
+    const INITIAL_LIMIT = 6;
 
     const filteredMembers = FSU_COMMITTEE.filter((member) => {
         const query = searchQuery.toLowerCase();
@@ -370,6 +373,18 @@ export default function CommitteeSection({ language }: CommitteeSectionProps) {
 
         return matchesSearch && matchesTab;
     });
+
+    const displayedMembers = showAll ? filteredMembers : filteredMembers.slice(0, INITIAL_LIMIT);
+
+    const handleTabChange = (tab: "all" | "executive" | "general") => {
+        setActiveTab(tab);
+        setShowAll(false);
+    };
+
+    const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+        setShowAll(false);
+    };
 
     const getInitials = (name: string) => {
         return name
@@ -399,8 +414,8 @@ export default function CommitteeSection({ language }: CommitteeSectionProps) {
                 </div>
 
                 {/* Search and Filters */}
-                <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-8 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <div className="relative w-full md:w-96">
+                <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-8 bg-slate-50 p-4 rounded-2xl border border-slate-100 w-full min-w-0 max-w-full">
+                    <div className="relative w-full md:w-96 min-w-0 max-w-full">
                         <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Search className="h-5 text-slate-400 w-5" />
                         </span>
@@ -409,14 +424,14 @@ export default function CommitteeSection({ language }: CommitteeSectionProps) {
                             className="block w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm text-slate-800 placeholder:text-slate-400"
                             placeholder={language === "en" ? "Search by name, role or phone..." : "नाम, पद वा फोनबाट खोज्नुहोस्..."}
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={handleSearchChange}
                         />
                     </div>
 
-                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 min-w-0 max-w-full">
                         <button
-                            onClick={() => setActiveTab("all")}
-                            className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 ${activeTab === "all"
+                            onClick={() => handleTabChange("all")}
+                            className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${activeTab === "all"
                                 ? "bg-blue-900 text-white shadow-sm"
                                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                                 }`}
@@ -424,8 +439,8 @@ export default function CommitteeSection({ language }: CommitteeSectionProps) {
                             {language === "en" ? "All Committee" : "सबै समिति"} ({FSU_COMMITTEE.length})
                         </button>
                         <button
-                            onClick={() => setActiveTab("executive")}
-                            className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 ${activeTab === "executive"
+                            onClick={() => handleTabChange("executive")}
+                            className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${activeTab === "executive"
                                 ? "bg-blue-900 text-white shadow-sm"
                                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                                 }`}
@@ -436,8 +451,8 @@ export default function CommitteeSection({ language }: CommitteeSectionProps) {
                             </span>
                         </button>
                         <button
-                            onClick={() => setActiveTab("general")}
-                            className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 ${activeTab === "general"
+                            onClick={() => handleTabChange("general")}
+                            className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${activeTab === "general"
                                 ? "bg-blue-900 text-white shadow-sm"
                                 : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                                 }`}
@@ -452,16 +467,43 @@ export default function CommitteeSection({ language }: CommitteeSectionProps) {
 
                 {/* Committee Directory Grid */}
                 {filteredMembers.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredMembers.map((member) => (
-                            <CommitteeMemberCard
-                                key={member.id}
-                                member={member}
-                                language={language}
-                                getInitials={getInitials}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {displayedMembers.map((member) => (
+                                <CommitteeMemberCard
+                                    key={member.id}
+                                    member={member}
+                                    language={language}
+                                    getInitials={getInitials}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Show More / Show Less Button */}
+                        {filteredMembers.length > INITIAL_LIMIT && (
+                            <div className="mt-10 flex justify-center">
+                                <button
+                                    onClick={() => setShowAll(!showAll)}
+                                    className="inline-flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-blue-900 border border-slate-200 px-6 py-2.5 rounded-full text-sm font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+                                >
+                                    <span>
+                                        {showAll
+                                            ? language === "en"
+                                                ? "Show Less"
+                                                : "कम देखाउनुहोस्"
+                                            : language === "en"
+                                                ? `Show More (${filteredMembers.length - INITIAL_LIMIT} more members)`
+                                                : `थप देखाउनुहोस् (${filteredMembers.length - INITIAL_LIMIT} थप सदस्यहरू)`}
+                                    </span>
+                                    {showAll ? (
+                                        <ChevronUp className="w-4 h-4 text-blue-900" />
+                                    ) : (
+                                        <ChevronDown className="w-4 h-4 text-blue-900" />
+                                    )}
+                                </button>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                         <p className="text-slate-500 text-sm">

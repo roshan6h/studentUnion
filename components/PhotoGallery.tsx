@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Images, ArrowRight, Expand, X } from "lucide-react";
+import { Images, Expand, X, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export interface GalleryImage {
@@ -156,13 +156,22 @@ interface PhotoGalleryProps {
 export default function PhotoGallery({ language }: PhotoGalleryProps) {
     const [activeCategory, setActiveCategory] = useState<string>("all");
     const [selectedImg, setSelectedImg] = useState<GalleryImage | null>(null);
+    const [showAll, setShowAll] = useState<boolean>(false);
 
     const categories = ["all", "Protest", "Sports", "Solidarity", "Campaign", "Interaction"];
+    const INITIAL_LIMIT = 6;
 
     const filteredImages = GALLERY_IMAGES.filter((img) => {
         if (activeCategory === "all") return true;
         return img.category.toLowerCase() === activeCategory.toLowerCase();
     });
+
+    const displayedImages = showAll ? filteredImages : filteredImages.slice(0, INITIAL_LIMIT);
+
+    const handleCategoryChange = (cat: string) => {
+        setActiveCategory(cat);
+        setShowAll(false);
+    };
 
     return (
         <section id="gallery" className="py-16 bg-slate-50 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
@@ -188,8 +197,8 @@ export default function PhotoGallery({ language }: PhotoGalleryProps) {
                         {categories.map((cat) => (
                             <button
                                 key={cat}
-                                onClick={() => setActiveCategory(cat)}
-                                className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all capitalize shrink-0 ${activeCategory === cat
+                                onClick={() => handleCategoryChange(cat)}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all capitalize shrink-0 cursor-pointer ${activeCategory === cat
                                     ? "bg-blue-900 text-white shadow-sm"
                                     : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                                     }`}
@@ -217,7 +226,7 @@ export default function PhotoGallery({ language }: PhotoGalleryProps) {
                 {/* Media Bento Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <AnimatePresence mode="popLayout">
-                        {filteredImages.map((img) => (
+                        {displayedImages.map((img) => (
                             <motion.div
                                 key={img.id}
                                 layout
@@ -264,6 +273,31 @@ export default function PhotoGallery({ language }: PhotoGalleryProps) {
                         ))}
                     </AnimatePresence>
                 </div>
+
+                {/* Show More / Show Less Button */}
+                {filteredImages.length > INITIAL_LIMIT && (
+                    <div className="mt-10 flex justify-center">
+                        <button
+                            onClick={() => setShowAll(!showAll)}
+                            className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-blue-900 border border-slate-200 px-6 py-2.5 rounded-full text-sm font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+                        >
+                            <span>
+                                {showAll
+                                    ? language === "en"
+                                        ? "Show Less"
+                                        : "कम देखाउनुहोस्"
+                                    : language === "en"
+                                        ? `Show More (${filteredImages.length - INITIAL_LIMIT} more)`
+                                        : `थप हेर्नुहोस् (${filteredImages.length - INITIAL_LIMIT} थप)`}
+                            </span>
+                            {showAll ? (
+                                <ChevronUp className="w-4 h-4 text-blue-900" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4 text-blue-900" />
+                            )}
+                        </button>
+                    </div>
+                )}
 
                 {/* Modal Lightbox for Images */}
                 <AnimatePresence>

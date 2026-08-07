@@ -1,380 +1,340 @@
-import React, { useState, useEffect } from "react";
-import { MessageSquare, Shield, HelpCircle, Send, CheckCircle, Clock, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { MessageSquare, Mail, Send, CheckCircle2, HelpCircle, PhoneCall, Sparkles, AlertCircle, Copy, Check } from "lucide-react";
 
 interface GrievanceFormProps {
     language: "en" | "np";
 }
 
-export interface Grievance {
-    id: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-    subject: string;
-    category: string;
-    message: string;
-    status: "Pending" | "In Review" | "Resolved";
-    createdAt: string;
-    isAnonymous: boolean;
-    response?: string;
-}
-const DEFAULT_SEED_GRIEVANCES: Grievance[] = [
-    {
-        id: "g-102",
-        name: "Anonymous Student",
-        email: undefined,
-        phone: undefined,
-        subject: "Extended Library Hours During Mid-Term Examinations",
-        category: "Academic",
-        message: "Requesting the campus library reading room to stay open until 6:00 PM during examination months so students living in hostels and far away can study peacefully.",
-        status: "Resolved",
-        createdAt: "2026-02-28T14:15:00.000Z",
-        isAnonymous: true,
-        response: "Approved! Library hours extended until 6:00 PM effective from March 1st."
-    }
-];
+const FIXED_EMAIL = "xpta393@gmail.com";
+const FIXED_PHONE = "9804126359";
+const FIXED_WHATSAPP_NUMBER = "9817126133";
 
 export default function GrievanceForm({ language }: GrievanceFormProps) {
     const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+    const [role, setRole] = useState("Student");
     const [phone, setPhone] = useState("");
     const [subject, setSubject] = useState("");
     const [category, setCategory] = useState("Academic");
     const [message, setMessage] = useState("");
-    const [isAnonymous, setIsAnonymous] = useState(false);
-
-    const [grievances, setGrievances] = useState<Grievance[]>(DEFAULT_SEED_GRIEVANCES);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitSuccess, setSubmitSuccess] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
-    const [userUploadedIds, setUserUploadedIds] = useState<string[]>([]);
+    const [copiedEmail, setCopiedEmail] = useState(false);
+    const [copiedPhone, setCopiedPhone] = useState(false);
+    const [sentNotice, setSentNotice] = useState<string | null>(null);
 
-    const categories = [
-        { value: "Academic", labelEn: "Academic & Policy", labelNp: "शैक्षिक तथा नीति" },
-        { value: "Exams", labelEn: "Exams & Timetables", labelNp: "परीक्षा तथा समयतालिका" },
-        { value: "Infrastructure", labelEn: "Campus Facilities", labelNp: "क्याम्पस भौतिक पूर्वाधार" },
-        { value: "Sports", labelEn: "Sports & Activities", labelNp: "खेलकुद तथा अतिरिक्त क्रियाकलाप" },
-        { value: "General", labelEn: "Other / General", labelNp: "अन्य / सामान्य" },
+    const roles = [
+        { value: "Student", labelEn: "Student", labelNp: "विद्यार्थी" },
+        { value: "Teacher", labelEn: "Teacher / Faculty", labelNp: "शिक्षक / प्राध्यापक" },
+        { value: "Staff", labelEn: "Campus Staff", labelNp: "क्याम्पस कर्मचारी" },
+        { value: "Executive", labelEn: "FSU Executive / Member", labelNp: "स्ववियु पदाधिकारी / सदस्य" },
+        { value: "Other", labelEn: "Visitor / Other", labelNp: "अन्य / सर्वसाधारण" },
     ];
 
-    const fetchGrievances = async () => {
-        let apiGrievances: Grievance[] = [];
-        try {
-            const res = await fetch("/api/grievances");
-            if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data)) {
-                    apiGrievances = data;
-                }
-            }
-        } catch (e) {
-            console.error("Error fetching grievances from API:", e);
+    const categories = [
+        { value: "Academic", labelEn: "Academic & Exams", labelNp: "शैक्षिक तथा परीक्षा" },
+        { value: "Infrastructure", labelEn: "Campus Facilities", labelNp: "क्याम्पस पूर्वाधार तथा सुविधा" },
+        { value: "Sports", labelEn: "Sports & Extra-Curricular", labelNp: "खेलकुद तथा अतिरिक्त क्रियाकलाप" },
+        { value: "General", labelEn: "General Suggestion", labelNp: "सामान्य सुझाव तथा सोधपुछ" },
+    ];
+
+    const quickTemplates = [
+        {
+            labelEn: " Library Hours Extension",
+            labelNp: " पुस्तकालय समय थप",
+            category: "Academic",
+            subjectEn: "Request for Extended Library Hours",
+            subjectNp: "पुस्तकालय अध्ययन समय थप गर्ने सम्बन्धमा",
+            msgEn: "Respected FSU Team, we request extending the campus library study hours until 6:00 PM during exam preparation months.",
+            msgNp: "आदरणीय स्ववियु टिम, परीक्षा तयारीको समयमा क्याम्पस पुस्तकालयको अध्ययन समय साँझ ६:०० बजेसम्म विस्तार गरिदिनुहुन अनुरोध गर्दछौं।"
+        },
+        {
+            labelEn: "Sports Equipment Suggestion",
+            labelNp: "खेलकुद सामग्री सुझाव",
+            category: "Sports",
+            subjectEn: "Suggestion for Sports Equipment",
+            subjectNp: "नयाँ खेलकुद सामग्री व्यवस्थापन सम्बन्धमा",
+            msgEn: "Dear FSU Sports Committee, please arrange additional volleyballs and badminton rackets for student break hours.",
+            msgNp: "आदरणीय स्ववियु खेलकुद समिति, विद्यार्थीहरूको खाली समयका लागि अतिरिक्त भलिबल र ब्याडमिन्टन र्याकेटको व्यवस्था गरिदिनुहुन अनुरोध गर्दछौं।"
+        },
+        {
+            labelEn: "IT Lab Workstations",
+            labelNp: "कम्प्युटर ल्याब सुधार",
+            category: "Infrastructure",
+            subjectEn: "Maintenance for IT Computer Lab",
+            subjectNp: "कम्प्युटर ल्याब सुधार तथा व्यवस्थापन",
+            msgEn: "Dear FSU Team, we suggest adding 10 more high-speed computers in the BCA practical lab.",
+            msgNp: "आदरणीय स्ववियु टिम, बीसीए प्रयोगात्मक कक्षाका लागि कम्प्युटर ल्याबमा थप १० वटा कम्प्युटर प्रणाली थप्न सुझाव पेश गर्दछौं।"
         }
+    ];
 
-        // Load local custom grievances from localStorage
-        let localGrievances: Grievance[] = [];
-        try {
-            const savedLocal = localStorage.getItem("local_custom_grievances");
-            if (savedLocal) {
-                const customItems = JSON.parse(savedLocal);
-                if (Array.isArray(customItems)) {
-                    localGrievances = customItems;
-                }
-            }
-        } catch (e) {
-            console.error("Error reading local custom grievances:", e);
-        }
-
-        // Combine base seed grievances, server API grievances, and local custom grievances
-        const combinedMap = new Map<string, Grievance>();
-
-        DEFAULT_SEED_GRIEVANCES.forEach(g => combinedMap.set(g.id, g));
-        apiGrievances.forEach(g => combinedMap.set(g.id, g));
-        localGrievances.forEach(g => combinedMap.set(g.id, g));
-
-        const finalArray = Array.from(combinedMap.values()).sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
-        setGrievances(finalArray);
-    };
-
-    useEffect(() => {
-        fetchGrievances();
-        try {
-            const saved = localStorage.getItem("my_submitted_grievance_ids");
-            if (saved) {
-                setUserUploadedIds(JSON.parse(saved));
-            }
-        } catch (e) {
-            console.error("Error loading submitted IDs:", e);
-        }
-    }, []);
-
-    const handleDelete = async (id: string) => {
-        if (!window.confirm(language === "en" ? "Are you sure you want to delete this submission?" : "के तपाईं यो गुनासो हटाउन चाहनुहुन्छ?")) {
-            return;
-        }
-
-        // Optimistically update UI
-        setGrievances(prev => prev.filter(g => g.id !== id));
-        const updatedIds = userUploadedIds.filter(item => item !== id);
-        setUserUploadedIds(updatedIds);
-        localStorage.setItem("my_submitted_grievance_ids", JSON.stringify(updatedIds));
-
-        // Also remove from local_custom_grievances if present
-        try {
-            const savedLocal = localStorage.getItem("local_custom_grievances");
-            if (savedLocal) {
-                const customItems: Grievance[] = JSON.parse(savedLocal);
-                const filtered = customItems.filter(item => item.id !== id);
-                localStorage.setItem("local_custom_grievances", JSON.stringify(filtered));
-            }
-        } catch (e) {
-            console.error("Error updating local custom grievances on delete:", e);
-        }
-
-        try {
-            await fetch(`/api/grievances/${id}`, { method: "DELETE" });
-            await fetch(`/api/grievances?id=${id}`, { method: "DELETE" });
-        } catch (e) {
-            console.error("Error sending delete request to server:", e);
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!subject.trim() || !message.trim()) {
-            setErrorMsg(language === "en" ? "Subject and message are required." : "विषय र सन्देश आवश्यक छ।");
-            return;
-        }
-
-        setIsSubmitting(true);
+    const handleApplyTemplate = (tpl: typeof quickTemplates[0]) => {
+        setCategory(tpl.category);
+        setSubject(language === "en" ? tpl.subjectEn : tpl.subjectNp);
+        setMessage(language === "en" ? tpl.msgEn : tpl.msgNp);
         setErrorMsg("");
+    };
 
-        try {
-            const response = await fetch("/api/grievances", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: isAnonymous ? "" : name,
-                    email: isAnonymous ? "" : email,
-                    phone: isAnonymous ? "" : phone,
-                    subject,
-                    category,
-                    message,
-                    isAnonymous,
-                }),
-            });
+    const constructEmailContent = () => {
+        const emailSubject = `[FSU Inquiry] ${category}: ${subject || "General Suggestion"}`;
+        const emailBody = `Respected Free Students' Union (FSU) Executive Team,
 
-            if (response.ok) {
-                const newG = await response.json();
-                setSubmitSuccess(true);
-                setName("");
-                setEmail("");
-                setPhone("");
-                setSubject("");
-                setMessage("");
-                setIsAnonymous(false);
+I am writing to submit the following inquiry/suggestion via the FSU Aadikavi Digital Portal:
 
-                if (newG && newG.id) {
-                    const updatedIds = Array.from(new Set([...userUploadedIds, newG.id]));
-                    setUserUploadedIds(updatedIds);
-                    try {
-                        localStorage.setItem("my_submitted_grievance_ids", JSON.stringify(updatedIds));
-                        const existingLocal = localStorage.getItem("local_custom_grievances");
-                        const list: Grievance[] = existingLocal ? JSON.parse(existingLocal) : [];
-                        if (!list.some(g => g.id === newG.id)) {
-                            list.push(newG);
-                            localStorage.setItem("local_custom_grievances", JSON.stringify(list));
-                        }
-                    } catch (e) {
-                        console.error("Error saving uploaded grievance to localStorage", e);
-                    }
-                }
+Sender Name: ${name.trim() || "Aadikavi Member / Visitor"}
+Your Role: ${role}
+Contact Number: ${phone.trim() || "Not specified"}
+Topic Category: ${category}
+Subject: ${subject.trim() || "General Suggestion"}
 
-                fetchGrievances();
-                setTimeout(() => setSubmitSuccess(false), 5000);
-            } else {
-                throw new Error("Server returned error, triggering fallback");
-            }
-        } catch (e) {
-            // Fallback for static host / offline: create and store locally
-            const fallbackGrievance: Grievance = {
-                id: "local-" + Date.now().toString(),
-                name: isAnonymous ? "Anonymous Student" : (name || "Anonymous"),
-                email: isAnonymous ? undefined : (email || undefined),
-                phone: isAnonymous ? undefined : (phone || undefined),
-                subject,
-                category: category || "General",
-                message,
-                status: "Pending",
-                createdAt: new Date().toISOString(),
-                isAnonymous: isAnonymous,
-                response: undefined
-            };
 
-            try {
-                const existingLocal = localStorage.getItem("local_custom_grievances");
-                const list: Grievance[] = existingLocal ? JSON.parse(existingLocal) : [];
-                list.push(fallbackGrievance);
-                localStorage.setItem("local_custom_grievances", JSON.stringify(list));
+MESSAGE / SUGGESTION:
+${message.trim()}
 
-                const updatedIds = [...userUploadedIds, fallbackGrievance.id];
-                setUserUploadedIds(updatedIds);
-                localStorage.setItem("my_submitted_grievance_ids", JSON.stringify(updatedIds));
+Thank you for your dedication to student welfare.
 
-                setGrievances(prev => [fallbackGrievance, ...prev]);
-                setSubmitSuccess(true);
-                setName("");
-                setEmail("");
-                setPhone("");
-                setSubject("");
-                setMessage("");
-                setIsAnonymous(false);
-                setTimeout(() => setSubmitSuccess(false), 5000);
-            } catch (err) {
-                console.error("Error saving fallback grievance:", err);
-                setErrorMsg("Failed to submit grievance. Please try again.");
-            }
-        } finally {
-            setIsSubmitting(false);
+Best regards,
+${name.trim() || "Aadikavi Member / Visitor"}
+Aadikavi Bhanubhakta Campus, Tanahun`;
+
+        return { emailSubject, emailBody };
+    };
+
+    const constructWhatsAppContent = () => {
+        return `*FSU AADIKAVI INQUIRY & SUGGESTION*
+━━━━━━━━━━━━━━━━━━━━
+Sender: ${name.trim() || "Aadikavi Member / Visitor"} (${role})
+Contact: ${phone.trim() || "N/A"}
+Category: ${category}
+Subject: ${subject.trim() || "Suggestion"}
+
+Message / Inquiry:
+${message.trim()}
+━━━━━━━━━━━━━━━━━━━━
+_Sent via FSU Aadikavi Official Web Portal_`;
+    };
+
+    const handleSendViaGmail = () => {
+        if (!message.trim()) {
+            setErrorMsg(
+                language === "en"
+                    ? "Please type your message or suggestion before sending."
+                    : "कृपया पठाउनु अघि आफ्नो सन्देश वा सुझाव लेख्नुहोस्।"
+            );
+            return;
+        }
+
+        setErrorMsg("");
+        const { emailSubject, emailBody } = constructEmailContent();
+
+        // Open Gmail webmail composer
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+            FIXED_EMAIL
+        )}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+
+        // Fallback mailto link
+        const mailtoUrl = `mailto:${FIXED_EMAIL}?subject=${encodeURIComponent(
+            emailSubject
+        )}&body=${encodeURIComponent(emailBody)}`;
+
+        const newWindow = window.open(gmailUrl, "_blank");
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
+            window.location.href = mailtoUrl;
+        }
+
+        setSentNotice(
+            language === "en"
+                ? "Opening Gmail with pre-filled message... Send it to complete!"
+                : "जिमेल खोलिँदैछ... पठाउन बटन थिच्नुहोस्!"
+        );
+        setTimeout(() => setSentNotice(null), 6000);
+    };
+
+    const handleSendViaWhatsApp = () => {
+        if (!message.trim()) {
+            setErrorMsg(
+                language === "en"
+                    ? "Please type your message or suggestion before sending."
+                    : "कृपया पठाउनु अघि आफ्नो सन्देश वा सुझाव लेख्नुहोस्।"
+            );
+            return;
+        }
+
+        setErrorMsg("");
+        const waText = constructWhatsAppContent();
+        const waUrl = `https://wa.me/${FIXED_WHATSAPP_NUMBER}?text=${encodeURIComponent(waText)}`;
+
+        window.open(waUrl, "_blank");
+
+        setSentNotice(
+            language === "en"
+                ? "Opening WhatsApp with pre-filled message... Click send in WhatsApp!"
+                : "व्हाट्सएप खोलिँदैछ... व्हाट्सएपमा सेन्ड थिच्नुहोस्!"
+        );
+        setTimeout(() => setSentNotice(null), 6000);
+    };
+
+    const handleCopy = (text: string, type: "email" | "phone") => {
+        navigator.clipboard.writeText(text);
+        if (type === "email") {
+            setCopiedEmail(true);
+            setTimeout(() => setCopiedEmail(false), 2000);
+        } else {
+            setCopiedPhone(true);
+            setTimeout(() => setCopiedPhone(false), 2000);
         }
     };
 
     return (
-        <section id="grievances" className="py-16">
+        <section id="grievances" className="py-16 bg-gradient-to-b from-white to-slate-50/70 border-t border-slate-100">
             <div className="max-w-6xl mx-auto px-6">
+                {/* Header Section */}
                 <div className="text-center mb-12">
-                    <span className="bg-blue-900/10 text-blue-950 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase inline-flex items-center gap-1.5 mb-3">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        {language === "en" ? "Voice Box" : "विद्यार्थी आवाज तथा गुनासो पेटी"}
+                    <span className="bg-blue-900/10 text-blue-950 border border-blue-900/20 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase inline-flex items-center gap-1.5 mb-3 shadow-xs">
+                        <MessageSquare className="w-3.5 h-3.5 text-blue-900" />
+                        {language === "en" ? "Suggestion & Inquiry Desk" : "सुझाव तथा सोधपुछ कक्ष"}
                     </span>
                     <h2 className="text-3xl font-extrabold text-slate-900 font-devanagari tracking-tight sm:text-4xl">
-                        {language === "en" ? "Grievance & Suggestion Desk" : "गुनासो तथा सुझाव संकलन केन्द्र"}
+                        {language === "en" ? "Inquire Us & Share Suggestions" : "हामीलाई सोधपुछ र सुझाव पठाउनुहोस्"}
                     </h2>
-                    <p className="mt-3 text-slate-500 max-w-2xl mx-auto text-sm">
+                    <p className="mt-3 text-slate-600 max-w-2xl mx-auto text-sm leading-relaxed">
                         {language === "en"
-                            ? "Submit official requests, infrastructural complaints, or academic recommendations directly to the FSU. Choose anonymous mode if you want absolute privacy."
-                            : "क्याम्पसभित्रका समस्या वा रचनात्मक सुझावहरू स्ववियु समक्ष सिधै पेस गर्नुहोस्। आफ्नो गोपनियता चाहेमा बेनामी (Anonymous) मोड छान्न सक्नुहुन्छ।"}
+                            ? "Type your inquiry or suggestion below. Upon clicking, Gmail or WhatsApp will open with your pre-filled message sent directly to the FSU Executive Office!"
+                            : "तपाईंको सोधपुछ वा सुझाव तलको बक्समा लेख्नुहोस्। बटन थिच्नासाथ तपाईंको सन्देश स्ववियु सचिवालयको आधिकारिक जिमेल वा व्हाट्सएपमा खुल्नेछ।"}
                     </p>
+
+                    {/* Fixed Contact Badge Highlights */}
+                    <div className="mt-6 inline-flex flex-wrap items-center justify-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-900 rounded-xl text-xs font-bold border border-red-100">
+                            <Mail className="w-4 h-4 text-red-600 shrink-0" />
+                            <span>{FIXED_EMAIL}</span>
+                            <button
+                                type="button"
+                                onClick={() => handleCopy(FIXED_EMAIL, "email")}
+                                className="ml-1 text-red-500 hover:text-red-700 cursor-pointer"
+                                title="Copy Email"
+                            >
+                                {copiedEmail ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-900 rounded-xl text-xs font-bold border border-emerald-100">
+                            <PhoneCall className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>+{FIXED_WHATSAPP_NUMBER} (WhatsApp)</span>
+                            <button
+                                type="button"
+                                onClick={() => handleCopy(FIXED_PHONE, "phone")}
+                                className="ml-1 text-emerald-500 hover:text-emerald-700 cursor-pointer"
+                                title="Copy Number"
+                            >
+                                {copiedPhone ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {/* Submission Form */}
-                    <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-md">
-                        <h3 className="text-lg font-bold text-slate-900 mb-6">
-                            {language === "en" ? "Draft Your Petition" : "ज्ञापन पत्र / गुनासो ड्राफ्ट"}
-                        </h3>
+                    {/* Main Inquiry Box Section */}
+                    <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-lg relative overflow-hidden">
+                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-blue-900" />
+                                {language === "en" ? "Compose Message" : "सन्देश / सुझाव लेख्नुहोस्"}
+                            </h3>
+                            <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                                {language === "en" ? "Direct Dispatch" : "सिधा प्रेषण"}
+                            </span>
+                        </div>
 
-                        {submitSuccess && (
-                            <div className="mb-6 p-4 bg-green-50 text-green-700 border border-green-200 rounded-xl flex items-center gap-3">
-                                <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
-                                <p className="text-xs">
-                                    {language === "en"
-                                        ? "Thank you! Your grievance has been recorded and submitted to the FSU committee."
-                                        : "धन्यवाद! तपाईको गुनासो स्ववियु समितिमा दर्ता भएको छ। हामी यस विषयमा काम गर्नेछौं।"}
-                                </p>
+                        {/* Quick Template Pills */}
+                        <div className="mb-5">
+                            <label className="block text-xs font-semibold text-slate-600 mb-2">
+                                {language === "en" ? "Quick Suggestion Templates:" : "छिटो सुझाव टेम्प्लेटहरू:"}
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {quickTemplates.map((tpl, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => handleApplyTemplate(tpl)}
+                                        className="text-[11px] bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-900 border border-slate-200 hover:border-blue-200 px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer active:scale-95"
+                                    >
+                                        {language === "en" ? tpl.labelEn : tpl.labelNp}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Notice or Error Alert */}
+                        {sentNotice && (
+                            <div className="mb-5 p-4 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl flex items-center gap-3 animate-fade-in text-xs font-medium">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                                <p>{sentNotice}</p>
                             </div>
                         )}
 
                         {errorMsg && (
-                            <div className="mb-6 p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs">
-                                {errorMsg}
+                            <div className="mb-5 p-4 bg-red-50 text-red-800 border border-red-200 rounded-2xl flex items-center gap-3 animate-fade-in text-xs font-medium">
+                                <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                                <p>{errorMsg}</p>
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Anonymous Toggle */}
-                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2.5">
-                                    <Shield className="w-5 h-5 text-blue-900 shrink-0" />
-                                    <div>
-                                        <p className="text-xs font-semibold text-slate-900">
-                                            {language === "en" ? "Submit Anonymously" : "बेनामी पेस गर्नुहोस्"}
-                                        </p>
-                                        <p className="text-[10px] text-slate-500">
-                                            {language === "en"
-                                                ? "Hides your name, email, and phone from the committee"
-                                                : "तपाईको नाम, इमेल र सम्पर्क विवरण गोप्य राखिन्छ।"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    checked={isAnonymous}
-                                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                                    className="w-4 h-4 text-blue-900 focus:ring-blue-900 border-slate-300 rounded"
-                                />
-                            </div>
-
-                            {/* Personal Details */}
-                            {!isAnonymous && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            {language === "en" ? "Student Name" : "विद्यार्थीको नाम"}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="block w-full border border-slate-200 rounded-lg p-2.5 bg-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-900"
-                                            placeholder={language === "en" ? "Ram Bahadur" : "राम बहादुर"}
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            {language === "en" ? "Email Address" : "इमेल ठेगाना"}
-                                        </label>
-                                        <input
-                                            type="email"
-                                            className="block w-full border border-slate-200 rounded-lg p-2.5 bg-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-900"
-                                            placeholder="ram@email.com"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="sm:col-span-2">
-                                        <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            {language === "en" ? "Phone / Mobile Number" : "सम्पर्क फोन नम्बर"}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="block w-full border border-slate-200 rounded-lg p-2.5 bg-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-900"
-                                            placeholder="98XXXXXXXX"
-                                            value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Subject & Category */}
+                        <div className="space-y-4">
+                            {/* Personal Info Row */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="sm:col-span-2">
-                                    <label className="block text-xs font-medium text-slate-700 mb-1">
-                                        {language === "en" ? "Grievance Subject" : "गुनासोको मुख्य विषय"} *
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                                        {language === "en" ? "Your Name (Optional)" : "तपाईंको नाम (ऐच्छिक)"}
                                     </label>
                                     <input
                                         type="text"
-                                        required
-                                        className="block w-full border border-slate-200 rounded-lg p-2.5 bg-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-900"
-                                        placeholder={language === "en" ? "E.g., Digital library access issue" : "जस्तै: पुस्तकालयमा नयाँ पुस्तक थप गर्ने सम्बन्धमा"}
-                                        value={subject}
-                                        onChange={(e) => setSubject(e.target.value)}
+                                        className="block w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50/50 text-xs focus:outline-none focus:ring-2 focus:ring-blue-900 focus:bg-white transition-all text-slate-900 placeholder:text-slate-400"
+                                        placeholder={language === "en" ? "E.g., Aaditya Sharma" : "जस्तै: आदित्य शर्मा"}
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
                                     />
                                 </div>
+
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-700 mb-1">
-                                        {language === "en" ? "Category" : "विधा छान्नुहोस्"}
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                                        {language === "en" ? "Your Role" : "तपाईंको भूमिका"}
+                                    </label>
+                                    <select
+                                        value={role}
+                                        onChange={(e) => setRole(e.target.value)}
+                                        className="block w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50/50 text-xs focus:outline-none focus:ring-2 focus:ring-blue-900 focus:bg-white transition-all text-slate-900 cursor-pointer"
+                                    >
+                                        {roles.map((r) => (
+                                            <option key={r.value} value={r.value}>
+                                                {language === "en" ? r.labelEn : r.labelNp}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                                        {language === "en" ? "Phone Number (Optional)" : "फोन नम्बर (ऐच्छिक)"}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="block w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50/50 text-xs focus:outline-none focus:ring-2 focus:ring-blue-900 focus:bg-white transition-all text-slate-900 placeholder:text-slate-400"
+                                        placeholder="98XXXXXXXX"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Category & Subject */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                                        {language === "en" ? "Topic Category" : "विषय विधा"}
                                     </label>
                                     <select
                                         value={category}
                                         onChange={(e) => setCategory(e.target.value)}
-                                        className="block w-full border border-slate-200 rounded-lg p-2.5 bg-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-900"
+                                        className="block w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50/50 text-xs focus:outline-none focus:ring-2 focus:ring-blue-900 focus:bg-white transition-all text-slate-900 cursor-pointer"
                                     >
                                         {categories.map((c) => (
                                             <option key={c.value} value={c.value}>
@@ -383,116 +343,147 @@ export default function GrievanceForm({ language }: GrievanceFormProps) {
                                         ))}
                                     </select>
                                 </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                                        {language === "en" ? "Subject / Topic Title" : "मुख्य विषय / शीर्षक"}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="block w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50/50 text-xs focus:outline-none focus:ring-2 focus:ring-blue-900 focus:bg-white transition-all text-slate-900 placeholder:text-slate-400"
+                                        placeholder={
+                                            language === "en"
+                                                ? "E.g., Suggestion for sports ground lights"
+                                                : "जस्तै: खेलकुद मैदानमा बत्ती जडान गर्ने सम्बन्धमा"
+                                        }
+                                        value={subject}
+                                        onChange={(e) => setSubject(e.target.value)}
+                                    />
+                                </div>
                             </div>
 
-                            {/* Message */}
+                            {/* Message Box */}
                             <div>
-                                <label className="block text-xs font-medium text-slate-700 mb-1">
-                                    {language === "en" ? "Detailed Description" : "समस्या / सुझावको विस्तृत विवरण"} *
-                                </label>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="block text-xs font-semibold text-slate-700">
+                                        {language === "en" ? "Write Message or Suggestion" : "सुझाव वा सोधपुछ विवरण"} *
+                                    </label>
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                        {message.length} {language === "en" ? "chars" : "अक्षर"}
+                                    </span>
+                                </div>
                                 <textarea
-                                    rows={4}
+                                    rows={5}
                                     required
-                                    className="block w-full border border-slate-200 rounded-lg p-2.5 bg-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-900"
+                                    className="block w-full border border-slate-200 rounded-xl p-3 bg-slate-50/50 text-xs focus:outline-none focus:ring-2 focus:ring-blue-900 focus:bg-white transition-all text-slate-900 placeholder:text-slate-400 leading-relaxed"
                                     placeholder={
                                         language === "en"
-                                            ? "Write details here... Be clear about dates, classroom sections, or specific academic terms."
-                                            : "कृपया आफ्नो विषय यहाँ विस्तृत रूपमा लेख्नुहोस्..."
+                                            ? "Write your detailed message, question, or suggestion here..."
+                                            : "तपाईंको विचार, प्रश्न वा सुझाव विस्तृत रूपमा यहाँ लेख्नुहोस्..."
                                     }
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                 />
                             </div>
 
-                            {/* Submit Button */}
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium text-xs py-3 rounded-xl transition-all shadow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                            >
-                                {isSubmitting ? (
-                                    language === "en" ? "Submitting..." : "पेस हुँदैछ..."
-                                ) : (
-                                    <>
-                                        {language === "en" ? "Submit official petition" : "आधिकारिक गुनासो दर्ता गर्नुहोस्"}
-                                        <Send className="w-3.5 h-3.5" />
-                                    </>
-                                )}
-                            </button>
-                        </form>
+                            {/* Dispatch Action Buttons */}
+                            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {/* Gmail Button */}
+                                <button
+                                    type="button"
+                                    onClick={handleSendViaGmail}
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold text-xs py-3 px-4 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2.5 cursor-pointer active:scale-98 group"
+                                >
+                                    <Mail className="w-4 h-4 text-white shrink-0 group-hover:scale-110 transition-transform" />
+                                    <div className="text-left">
+                                        <span className="block leading-none">{language === "en" ? "Send via Gmail" : "जिमेलबाट पठाउनुहोस्"}</span>
+                                        <span className="text-[9px] text-red-100 font-normal opacity-90">{FIXED_EMAIL}</span>
+                                    </div>
+                                </button>
+
+                                {/* WhatsApp Button */}
+                                <button
+                                    type="button"
+                                    onClick={handleSendViaWhatsApp}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-3 px-4 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2.5 cursor-pointer active:scale-98 group"
+                                >
+                                    <Send className="w-4 h-4 text-white shrink-0 group-hover:scale-110 transition-transform" />
+                                    <div className="text-left">
+                                        <span className="block leading-none">{language === "en" ? "Send via WhatsApp" : "व्हाट्सएपबाट पठाउनुहोस्"}</span>
+                                        <span className="text-[9px] text-emerald-100 font-normal opacity-90">+{FIXED_PHONE}</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Resolutions & Updates Log */}
+                    {/* Right Information & Contact Panel */}
                     <div className="lg:col-span-5 space-y-6">
-                        <div className="bg-slate-950 text-white p-6 rounded-2xl border border-blue-900/20 shadow-md">
+                        {/* Target Details Card */}
+                        <div className="bg-slate-900 text-white p-6 sm:p-7 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl pointer-events-none" />
                             <h3 className="text-base font-bold text-white mb-2 flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-blue-400" />
-                                {language === "en" ? "Live Action Tracker" : "गुनासो सुनुवाई रेकर्ड"}
+                                <HelpCircle className="w-5 h-5 text-blue-400" />
+                                {language === "en" ? "How Direct Dispatch Works" : "सन्देश पठाउने विधि"}
                             </h3>
-                            <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                            <p className="text-xs text-slate-300 leading-relaxed mb-6">
                                 {language === "en"
-                                    ? "Transparency is our foundation. Below are real-time grievance filings showing FSU's processing and status updates."
-                                    : "पारदर्शिता नै हाम्रो आधार हो। स्ववियु टिमले प्राप्त गरेका गुनासाहरू र तिनको सम्बोधन स्थिति यहाँ हेर्न सक्नुहुन्छ।"}
+                                    ? "When you click Gmail or WhatsApp, your written inquiry is instantly formatted into a clean petition draft and opened directly in your app with our official destination pre-filled."
+                                    : "जिमेल वा व्हाट्सएप बटन थिच्नासाथ तपाईंको सन्देश स्वतः तयार भई आधिकारिक ठेगाना सहित खुल्नेछ।"}
                             </p>
 
-                            {/* Grievances List */}
-                            <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
-                                {grievances.length > 0 ? (
-                                    grievances.map((g) => (
-                                        <div key={g.id} className="bg-white/5 border border-white/5 p-3.5 rounded-xl text-xs space-y-2">
-                                            <div className="flex justify-between items-start gap-2">
-                                                <span className="font-bold text-white truncate max-w-[160px]">{g.subject}</span>
-                                                <span
-                                                    className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase ${g.status === "Pending"
-                                                        ? "bg-amber-500/10 text-amber-400"
-                                                        : g.status === "In Review"
-                                                            ? "bg-blue-500/10 text-blue-400"
-                                                            : "bg-green-500/10 text-green-400"
-                                                        }`}
-                                                >
-                                                    {g.status}
-                                                </span>
-                                            </div>
-                                            <p className="text-slate-400 text-[11px] line-clamp-2 leading-relaxed italic">
-                                                "{g.message}"
-                                            </p>
-                                            <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1.5 border-t border-white/5 font-mono">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span>{g.isAnonymous ? "Anonymous Student" : g.name}</span>
-                                                    {userUploadedIds.includes(g.id) && (
-                                                        <button
-                                                            onClick={() => handleDelete(g.id)}
-                                                            className="text-red-400 hover:text-red-300 transition-colors cursor-pointer flex items-center gap-0.5 ml-2 font-sans bg-red-500/10 hover:bg-red-500/20 px-1.5 py-0.5 rounded text-[9px] font-medium"
-                                                            title={language === "en" ? "Delete My Submission" : "मेरो गुनासो हटाउनुहोस्"}
-                                                        >
-                                                            <Trash2 className="w-2.5 h-2.5 shrink-0" />
-                                                            <span>{language === "en" ? "Delete" : "हटाउनुहोस्"}</span>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <span>{new Date(g.createdAt).toLocaleDateString()}</span>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-8 text-slate-500 text-xs italic">
-                                        {language === "en" ? "No entries submitted yet. Be the first!" : "अहिलेसम्म कुनै गुनासो रेकर्ड गरिएको छैन।"}
+                            <div className="space-y-4">
+                                <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-3">
+                                    <div className="p-2 bg-red-500/20 text-red-400 rounded-xl shrink-0">
+                                        <Mail className="w-4 h-4" />
                                     </div>
-                                )}
+                                    <div>
+                                        <h4 className="text-xs font-bold text-white">
+                                            {language === "en" ? "Official Gmail Address" : "आधिकारिक इमेल ठेगाना"}
+                                        </h4>
+                                        <p className="text-[11px] text-slate-300 font-mono mt-0.5">{FIXED_EMAIL}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1">
+                                            {language === "en"
+                                                ? "Monitored daily by FSU Executive Secretary"
+                                                : "स्ववियु सचिव द्वारा दैनिक निगरानी गरिने इमेल।"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-3">
+                                    <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl shrink-0">
+                                        <Send className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-white">
+                                            {language === "en" ? "Official WhatsApp Helpline" : "व्हाट्सएप हटलाइन"}
+                                        </h4>
+                                        <p className="text-[11px] text-slate-300 font-mono mt-0.5">
+                                            +{FIXED_WHATSAPP_NUMBER} (9804141296)
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 mt-1">
+                                            {language === "en"
+                                                ? "Directly reaches Anup Ale Magar (FSU President)"
+                                                : "स्ववियु अध्यक्ष अनुप आले मगरसँग सिधा सम्पर्क।"}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Information Card */}
-                        <div className="bg-red-500/5 border border-red-500/10 p-5 rounded-2xl">
-                            <h4 className="text-xs font-bold text-red-950 mb-1 flex items-center gap-1.5">
-                                <HelpCircle className="w-4 h-4 text-red-600" />
-                                {language === "en" ? "How does it work?" : "सुनुवाई प्रक्रिया कसरी हुन्छ?"}
+                        {/* Direct Office Contact Card */}
+                        <div className="bg-blue-900/5 border border-blue-900/10 p-6 rounded-3xl">
+                            <h4 className="text-xs font-bold text-blue-950 uppercase tracking-wider mb-2">
+                                {language === "en" ? "FSU Physical Secretariat" : "स्ववियु भौतिक सचिवालय"}
                             </h4>
-                            <p className="text-[11px] text-slate-600 leading-relaxed">
+                            <p className="text-xs text-slate-600 leading-relaxed mb-3">
                                 {language === "en"
-                                    ? "Every submitted petition is logged in the secretary's file within 24 hours. Valid complaints are formally presented as a dispatch memo to the Campus Chief by our President, Anup Ale Magar."
-                                    : "दर्ता भएका हरेक सुझाव वा गुनासोलाई स्ववियु सचिवले २४ घण्टाभित्र फाइलमा चढाउनुहुन्छ। महत्वपूर्ण विषयहरूलाई स्ववियु अध्यक्ष अनुप आले मगरले सिधै क्याम्पस प्रमुख समक्ष पुर्याउनुहुनेछ।"}
+                                    ? "You can also visit our FSU Office in person during campus working hours (6:00 AM - 4:00 PM)."
+                                    : "तपाईं क्याम्पस समयमा (बिहान ६:00 देखि ११:00 बजेसम्म) स्ववियु भवनमा आएर पनि प्रत्यक्ष भेट्न सक्नुहुन्छ।"}
                             </p>
+                            <div className="text-[11px] font-semibold text-blue-900">
+                                📍 Vyas-1, Vigyanchaur, Tanahun, Nepal
+                            </div>
                         </div>
                     </div>
                 </div>
